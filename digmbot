@@ -23,26 +23,30 @@ BEGIN {
 }
 
 function setup() {
-	if (nick == "")
-		nick = "digmbot"
-	if (owner == "")
-		owner = "paradigm"
-	if (server == "")
-		server = "chat.freenode.net"
-	if (port == "")
-		port = 6667
-	if (plugindir == "")
-		plugindir = "./plugins"
+	if (nick == "")      nick      = "digmbot"
+	if (owner == "")     owner     = "paradigm"
+	if (server == "")    server    = "chat.freenode.net"
+	if (port == "")      port      = 6667
+	if (plugindir == "") plugindir = "./plugins"
 }
 
 function loadplugins() {
 	print "Loading plugins..."
 	while (("ls "plugindir | getline plugin) > 0) {
-		plugindir"/"plugin " returnregex" | getline plugins[plugin]
+		file = plugindir "/" plugin
+		print "nick "      nick      |& file
+		print "owner "     owner     |& file
+		print "server "    server    |& file
+		print "port "      port      |& file
+		print "plugindir " plugindir |& file
+		print "plugin "    plugin    |& file
+		print "endload"              |& file
+		close(file,"to")
+		file |& getline plugins[plugin]
+		close(file)
 		print "Plugin "plugin" is looking for regex /" plugins[plugin] "/"
 	}
 	close("ls "plugindir)
-	print "done"
 }
 
 function parse() {
@@ -54,6 +58,7 @@ function parse() {
 	u = substr($0,2,index(substr($0,2),"!")-1) # user
 	r = $3                                     # room
 	$0 = substr($0,index(substr($0,2),":")+2)  # message
+	$0 = substr($0,1,length($0)-1)             # strip \r\n
 
 	if (u == owner && r == nick) {
 		if ($1 == "say") {
@@ -77,11 +82,19 @@ function parse() {
 	}
 	for (plugin in plugins) {
 		if ($0 ~ plugins[plugin]) {
-			print "TRIGGERED PLUGIN "plugin
-			plugindir"/"plugin" "$0 | getline output
-			close(plugindir"/"plugin" "$0)
-			printf "PRIVMSG " r " :" output "\r\n" |& net
-			return
+			file = plugindir "/" plugin
+			print "Triggered plugin: " file
+			print "user " u     |& file
+			print "room " r     |& file
+			print "message " $0 |& file
+			print "endtrigger"  |& file
+			close(file,"to")
+			file |& getline output
+			close(file)
+			if (output != "") {
+				printf "PRIVMSG " r " :" output "\r\n" |& net
+				return
+			}
 		}
 	}
 }

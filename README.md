@@ -51,24 +51,51 @@ Plugins
 -------
 
 The bot will attempt to treat everything found in the `plugindir` as a plugin.
-The files in there should be executable.  If the files in there are given the
-argument "returnregex", they should print out the regular expression that they
-want to trigger them.  For example, if a plugin is supposed to return the time
-upon the bot seeing ".time" as the (entire) message, when the plugin sees
-"returnregex" it should print "^[.]time$".  The regex is limited to whatever gawk
-understands.  Whenever digmbot sees that regex (baring normal commands, which
-take precidence), it will pass along the entire line to the relevant plugin as
-an argument.  Whatever the plugin returns will be printed.
+The files in there should be executable.  Upon loading the plugin, digmbot will
+send the following information to the plugin via stdin.  The first term will be
+the name of the key, then there will be a space, followed by the value
+corresponding to the key.  Then a newline separating everything.
 
-Note the plugin specifics will likely change in the future to support things
-such as having the plugin know things such as which user said a given thing.
+- nick
+- owner
+- server
+- port
+- plugindir
+- plugin
+- endload
+
+`endload` should always be the final line sent when loading a plugin.  In
+theory other lines could be added before that one.  To be future-proof your
+plugin should ignore items it does not recognize.
+
+After seeing `endload`, the plugin should return a regular expression (as
+interpreted by gawk) which will trigger the plugin.
+
+When digmbot detects the regular expression matches something someone said, it
+sends the following items to the plugin, again via stdin:
+
+- user
+- room
+- message
+- endtrigger
+
+Like when loading, when `endtrigger` is seen this indicates the end of
+digmbot's information for the plugin.  The plugin should respond by printing
+with the one line of output which digmbot will print in the same room it saw
+the trigger message.  Alternatively, the plugin can print an empty string or
+nothing.
+
+Only the first plugin which prints something upon trigger is utilized.
+
+See bundled plugins for examples.  Note that while the bundled examples are in
+awk, the plugins could be in any language.
 
 Known issues
 ------------
 
 - digmbot relies on the command `ls` to find the plugins.  In theory someone
-could have gawk but not ls, in which case this could be problematic.
-
-- The plugin interface is pretty limited at the moment.
-
-- Only has one owner.
+  could have gawk but not ls, in which case this could be problematic.
+- digmbot only has one owner.
+- Plugins can only return one line of output
+- Plugins can only trigger upon a message from a user and not external sources
+  such as a timer or webpage being updated.
