@@ -12,9 +12,9 @@ BEGIN {
 	setup()
 	loadplugins()
 	net = "/inet/tcp/0/" server "/" port
-	IFS=OFS="\r\n"
+	ORS=RS="\r\n"
 
-	print  "Connecting to " server "/" port "..."
+	print "Connecting to " server "/" port "..."
 	print "NICK " nick                |& net
 	print "USER " nick " x x :" nick  |& net
 
@@ -56,18 +56,17 @@ function parse() {
 	else
 		print
 
-	u = substr($0,2,index(substr($0,2),"!")-1) # user
-	r = $3                                     # room
-	$0 = substr($0,index(substr($0,2),":")+2)  # message
-	#$0 = substr($0,1,length($0)-1)             # strip \r\n
+	user = substr($0,2,index(substr($0,2),"!")-1)
+	room = $3
+	$0 = substr($0,index(substr($0,2),":")+2)
 
-	if (u == owner && r == nick) {
+	if (user == owner && room == nick) {
 		if ($1 == "say") {
-			print "PRIVMSG " $2 " :" cf(2) |& net
+			print "PRIVMSG " $2 " :" cutfield(2) |& net
 			return
 		}
 		if ($1 == "action") {
-			print "PRIVMSG " $2 " :""\x01""ACTION " cf(2) |& net
+			print "PRIVMSG " $2 " :""\x01""ACTION " cutfield(2) |& net
 			return
 		}
 		if ($1 == "join") {
@@ -85,15 +84,15 @@ function parse() {
 		if ($0 ~ plugins[plugin]) {
 			file = plugindir "/" plugin
 			print "Triggered plugin: " file
-			print "user " u     |& file
-			print "room " r     |& file
+			print "user " user  |& file
+			print "room " room  |& file
 			print "message " $0 |& file
 			print "endtrigger"  |& file
 			close(file,"to")
 			file |& getline output
 			close(file)
 			if (output != "") {
-				print "PRIVMSG " r " :" output |& net
+				print "PRIVMSG " room " :" output |& net
 				return
 			}
 		}
@@ -101,8 +100,8 @@ function parse() {
 }
 
 # skips first n many fields, then returns the rest
-function cf(n) {
-	# couldn't get {n} in regex to work for some reason, here's an ugly hack.
+# hacky due to backwards-compatibility and hashbang silliness
+function cutfield(n) {
 	msg = $0
 	regex = "^[[:blank:]]*"
 	skipfield = "([^[:blank:]]+[[:blank:]]+)"

@@ -69,7 +69,7 @@ theory other lines could be added before that one.  To be future-proof your
 plugin should ignore items it does not recognize.
 
 After seeing `endload`, the plugin should return a regular expression (as
-interpreted by gawk) which will trigger the plugin.
+interpreted by `gawk`) which will trigger the plugin.
 
 When digmbot detects the regular expression matches something someone said, it
 sends the following items to the plugin, again via stdin:
