@@ -46,6 +46,10 @@ following commands it will act accordingly:
 - part
     - The bot will part the room mentioned in the second term.
     - e.g.: /msg digmbot part #room
+- reload
+    - The bot will reload all plugins.  Useful for, for example, adding a new
+      plugin.
+    - e.g.: /msg digmbot reload
 - exit
     - The bot will exit.
     - e.g.: /msg digmbot exit

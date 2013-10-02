@@ -32,6 +32,7 @@ function setup() {
 }
 
 function loadplugins() {
+	RS="\n"
 	print "Loading plugins..."
 	while (("ls "plugindir | getline plugin) > 0) {
 		file = plugindir "/" plugin
@@ -48,6 +49,7 @@ function loadplugins() {
 		print "Plugin \""plugin"\" is looking for regex /" plugins[plugin] "/"
 	}
 	close("ls "plugindir)
+	RS="\r\n"
 }
 
 function parse() {
@@ -75,6 +77,11 @@ function parse() {
 		}
 		if ($1 == "part") {
 			send("PART " $2, net)
+			return
+		}
+		if ($1 == "reload") {
+			delete plugins
+			loadplugins()
 			return
 		}
 		if ($1 == "quit")
