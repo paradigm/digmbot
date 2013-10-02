@@ -12,11 +12,11 @@ BEGIN {
 	setup()
 	loadplugins()
 	net = "/inet/tcp/0/" server "/" port
-	ORS=RS="\r\n"
+	RS="\r\n"
 
 	print "Connecting to " server "/" port "..."
-	print "NICK " nick                |& net
-	print "USER " nick " x x :" nick  |& net
+	send("NICK " nick, net)
+	send("USER " nick " x x :" nick, net)
 
 	while (net |& getline) {
 		parse()
@@ -35,24 +35,24 @@ function loadplugins() {
 	print "Loading plugins..."
 	while (("ls "plugindir | getline plugin) > 0) {
 		file = plugindir "/" plugin
-		print "nick "      nick      |& file
-		print "owner "     owner     |& file
-		print "server "    server    |& file
-		print "port "      port      |& file
-		print "plugindir " plugindir |& file
-		print "plugin "    plugin    |& file
-		print "endload"              |& file
+		send("nick "      nick,      file)
+		send("owner "     owner,     file)
+		send("server "    server,    file)
+		send("port "      port,      file)
+		send("plugindir " plugindir, file)
+		send("plugin "    plugin,    file)
+		send("endload",              file)
 		close(file,"to")
 		file |& getline plugins[plugin]
 		close(file)
-		print "Plugin "plugin" is looking for regex /" plugins[plugin] "/"
+		print "Plugin \""plugin"\" is looking for regex /" plugins[plugin] "/"
 	}
 	close("ls "plugindir)
 }
 
 function parse() {
 	if ($1 == "PING")
-		print "PONG "$2 |& net
+		send("PONG " $2, net)
 	else
 		print
 
@@ -62,19 +62,19 @@ function parse() {
 
 	if (user == owner && room == nick) {
 		if ($1 == "say") {
-			print "PRIVMSG " $2 " :" cutfield(2) |& net
+			send("PRIVMSG " $2 " :" cutfield(2), net)
 			return
 		}
 		if ($1 == "action") {
-			print "PRIVMSG " $2 " :""\x01""ACTION " cutfield(2) |& net
+			send("PRIVMSG " $2 " :""\x01""ACTION " cutfield(2), net)
 			return
 		}
 		if ($1 == "join") {
-			print "JOIN " $2 |& net
+			send("JOIN " $2, net)
 			return
 		}
 		if ($1 == "part") {
-			print "PART " $2 |& net
+			send("PART " $2, net)
 			return
 		}
 		if ($1 == "quit")
@@ -84,15 +84,15 @@ function parse() {
 		if ($0 ~ plugins[plugin]) {
 			file = plugindir "/" plugin
 			print "Triggered plugin: " file
-			print "user " user  |& file
-			print "room " room  |& file
-			print "message " $0 |& file
-			print "endtrigger"  |& file
+			send("user " user,  file)
+			send("room " room,  file)
+			send("message " $0, file)
+			send("endtrigger",  file)
 			close(file,"to")
 			file |& getline output
 			close(file)
 			if (output != "") {
-				print "PRIVMSG " room " :" output |& net
+				send("PRIVMSG " room " :" output, net)
 				return
 			}
 		}
@@ -109,4 +109,11 @@ function cutfield(n) {
 		regex = regex "" skipfield
 	sub(regex,"",msg)
 	return msg
+}
+
+function send(outstring, file) {
+	if (file == net)
+		printf "%s\r\n", outstring |& file
+	else
+		printf "%s\n", outstring |& file
 }

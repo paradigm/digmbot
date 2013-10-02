@@ -56,11 +56,11 @@
 	punc[2] = "."
 	punc[3] = "...?"
 	punc[4] = "!"
-	punc[5] = "."
-	punc[6] = "?"
+	punc[5] = "...!?"
+	punc[6] = "!!"
 	punc[7] = "...!?"
-	punc[8] = "!"
-	punc[9] = "!!"
+	punc[8] = "!!"
+	punc[9] = "!!!"
 	out = out "" punc[int(rand()*(7+puncseed))]
 	print out
 }
