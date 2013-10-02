@@ -12,10 +12,11 @@ BEGIN {
 	setup()
 	loadplugins()
 	net = "/inet/tcp/0/" server "/" port
+	IFS=OFS="\r\n"
 
 	print  "Connecting to " server "/" port "..."
-	printf "NICK " nick "\r\n"               |& net
-	printf "USER " nick " x x :" nick "\r\n" |& net
+	print "NICK " nick                |& net
+	print "USER " nick " x x :" nick  |& net
 
 	while (net |& getline) {
 		parse()
@@ -51,30 +52,30 @@ function loadplugins() {
 
 function parse() {
 	if ($1 == "PING")
-		printf "PONG "$2 |& net
+		print "PONG "$2 |& net
 	else
 		print
 
 	u = substr($0,2,index(substr($0,2),"!")-1) # user
 	r = $3                                     # room
 	$0 = substr($0,index(substr($0,2),":")+2)  # message
-	$0 = substr($0,1,length($0)-1)             # strip \r\n
+	#$0 = substr($0,1,length($0)-1)             # strip \r\n
 
 	if (u == owner && r == nick) {
 		if ($1 == "say") {
-			printf "PRIVMSG " $2 " :" cf(2) "\r\n" |& net
+			print "PRIVMSG " $2 " :" cf(2) |& net
 			return
 		}
 		if ($1 == "action") {
-			printf "PRIVMSG " $2 " :%sACTION " cf(2) "\r\n", "\x01" |& net
+			print "PRIVMSG " $2 " :""\x01""ACTION " cf(2) |& net
 			return
 		}
 		if ($1 == "join") {
-			printf "JOIN " $2 "\r\n" |& net
+			print "JOIN " $2 |& net
 			return
 		}
 		if ($1 == "part") {
-			printf "PART " $2 "\r\n" |& net
+			print "PART " $2 |& net
 			return
 		}
 		if ($1 == "quit")
@@ -92,7 +93,7 @@ function parse() {
 			file |& getline output
 			close(file)
 			if (output != "") {
-				printf "PRIVMSG " r " :" output "\r\n" |& net
+				print "PRIVMSG " r " :" output |& net
 				return
 			}
 		}
