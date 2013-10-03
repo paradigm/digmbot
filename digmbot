@@ -32,9 +32,17 @@ function setup() {
 }
 
 function loadplugins() {
-	RS="\n"
 	print "Loading plugins..."
-	while (("ls "plugindir | getline plugin) > 0) {
+	# reliable (consider newline in filename) and posix way to get plugins
+	RS="/"
+	cmd = "cd \""plugindir"\"; for f in *; do printf \"%s/\" \"$f\"; done"
+	while((cmd | getline plugin_name) > 0)
+		plugin_names[plugin_name];
+	close(cmd)
+
+	# get desired regex to trigger plugin from each plugin
+	RS="\n"
+	for (plugin in plugin_names) {
 		file = plugindir "/" plugin
 		send("nick "      nick,      file)
 		send("owner "     owner,     file)

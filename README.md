@@ -98,8 +98,9 @@ awk, the plugins could be in any language.
 Known issues
 ------------
 
-- digmbot relies on the command `ls` to find the plugins.  In theory someone
-  could have gawk but not ls, in which case this could be problematic.
+- digmbot relies on the system() and the shell (with globbing) to get the
+  contents of the plugindir.  In theory someone could install gawk on a system
+  without a bourne-style shell somehow.
 - digmbot can only have one owner.
 - Plugins can only return one line of output.
 - Plugins can only trigger upon a message from a user and not external sources
