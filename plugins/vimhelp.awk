@@ -2,14 +2,14 @@
 #
 # returns url corresponding to requested vim "::help"
 
-BEGIN{
+BEGIN {
 	tagfile = "/tmp/vimhelptags"
 	tagurl = "https://vim.googlecode.com/hg/runtime/doc/tags"
 	if (system("[ -r "tagfile" ]") != 0) {
 		system("wget \""tagurl"\" -O "tagfile ">/dev/null 2>&1")
 	}
 }
-function geturl(key){
+function geturl(key) {
 	# look for an exact match
 	while ((getline < tagfile) > 0) {
 		if (index($0, key"\t") == 1) {
@@ -30,7 +30,7 @@ function geturl(key){
 	return "No matches against "tagurl" as of whenever this bot downloaded it"
 }
 /^endload/ {
-	print "^::(h|he|hel|help) "
+	print "^(::|;)(h|he|hel|help) "
 }
 /^message/ {
 	$1=""
@@ -38,8 +38,7 @@ function geturl(key){
 }
 /^endtrigger/ {
 	$0=msg
-	cmd = $1
 	key = $2
 	url = geturl(key)
-	printf "%s %s -> %s", cmd, key, url
+	printf ":man %s -> %s", key, url
 }
