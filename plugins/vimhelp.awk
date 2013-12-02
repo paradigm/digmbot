@@ -40,5 +40,5 @@ function geturl(key) {
 	$0=msg
 	key = $2
 	url = geturl(key)
-	printf ":man %s -> %s", key, url
+	printf ":help %s -> %s", key, url
 }
