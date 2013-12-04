@@ -18,6 +18,16 @@ function geturl(key) {
 		}
 	}
 	close(tagfile)
+	# look for case insensitive match
+	while ((getline < tagfile) > 0) {
+		if (index(tolower($0), tolower(key)"\t") == 1) {
+			sub(".txt", "", $2)
+			sub("^/\\*", "", $3)
+			sub("\\*$", "", $3)
+			return "http://vimdoc.sourceforge.net/htmldoc/"$2".html#"$3
+		}
+	}
+	close(tagfile)
 	# look for a substring match
 	while ((getline < tagfile) > 0) {
 		if (index($0, key) > 0 && index($0, key"\t") < index($0, "\t")) {
