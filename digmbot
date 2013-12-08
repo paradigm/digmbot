@@ -65,12 +65,12 @@ function parse() {
 		send("PONG " $2, net)
 		return
 	}
-	# NOTICEs should explicitly be ignored, but it's easier to just ignore
-	# all non-PRIVMSG
-	else if ($1 != "PRIVMSG")
-		return
 	else
 		print
+	# NOTICEs should explicitly be ignored, but it's easier to just ignore
+	# all non-PRIVMSG
+	if ($2 != "PRIVMSG")
+		return
 
 	user = substr($0,2,index(substr($0,2),"!")-1)
 	room = $3
