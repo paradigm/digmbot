@@ -68,7 +68,9 @@ function parse() {
 
 	user = substr($0,2,index(substr($0,2),"!")-1)
 	room = $3
-	$0 = substr($0,index(substr($0,2),":")+2)
+	# Skip over $1 since it may have a ':' in it (e.g., IPv6)
+	$0 = substr($0,index($0, $2))
+	$0 = substr($0,index($0,":")+1)
 
 	if (user == owner && room == nick) {
 		if ($1 == "say") {
