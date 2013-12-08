@@ -61,8 +61,14 @@ function loadplugins() {
 }
 
 function parse() {
-	if ($1 == "PING")
+	if ($1 == "PING") {
 		send("PONG " $2, net)
+		return
+	}
+	# NOTICEs should explicitly be ignored, but it's easier to just ignore
+	# all non-PRIVMSG
+	else if ($1 != "PRIVMSG")
+		return
 	else
 		print
 
