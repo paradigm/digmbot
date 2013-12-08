@@ -74,11 +74,14 @@ function parse() {
 
 	user = substr($0,2,index(substr($0,2),"!")-1)
 	room = $3
+	# Respond directly to the user if they're PMing the bot
+	if (room == nick)
+		room = user
 	# Skip over $1 since it may have a ':' in it (e.g., IPv6)
 	$0 = substr($0,index($0, $2))
 	$0 = substr($0,index($0,":")+1)
 
-	if (user == owner && room == nick) {
+	if (user == owner && room == user) {
 		if ($1 == "say") {
 			send("PRIVMSG " $2 " :" cutfield(2), net)
 			return
