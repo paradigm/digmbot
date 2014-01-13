@@ -94,8 +94,6 @@ with the one line of output which digmbot will print in the same room it saw
 the trigger message.  Alternatively, the plugin can volunteer itself to be
 skipped and print nothing.
 
-Only the first plugin which prints something upon trigger is utilized.
-
 See bundled plugins for examples.  Note that while the bundled examples are in
 awk, the plugins could be in any language.
 

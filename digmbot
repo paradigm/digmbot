@@ -125,10 +125,8 @@ function parse() {
 			close(file,"to")
 			file |& getline output
 			close(file)
-			if (output != "") {
+			if (output != "")
 				send("PRIVMSG " room " :" output, net)
-				return
-			}
 		}
 	}
 }
