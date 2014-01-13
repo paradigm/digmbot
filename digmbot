@@ -12,12 +12,19 @@ BEGIN {
 	setup()
 	loadplugins()
 	net = "/inet/tcp/0/" server "/" port
-	RS="\r\n"
 
 	print "Connecting to " server "/" port "..."
 	send("NICK " nick, net)
 	send("USER " nick " x x :" nick, net)
 
+	RS="\n"
+	while ((getline < initfile) > 0) {
+		$0=":"owner"!~"owner"@"owner" PRIVMSG "nick" :"$0
+		parse()
+	}
+	close(initfile)
+
+	RS="\r\n"
 	while (net |& getline) {
 		parse()
 	}
@@ -29,6 +36,7 @@ function setup() {
 	if (server == "")    server    = "chat.freenode.net"
 	if (port == "")      port      = 6667
 	if (plugindir == "") plugindir = "./plugins"
+	if (initfile == "")  initfile = "./init"
 }
 
 function loadplugins() {

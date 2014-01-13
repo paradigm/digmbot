@@ -22,6 +22,10 @@ Arguments:
     - The port number to connect to.
 - plugindir
     - The directory in which to look for plugins.
+- initfile
+    - The path to a file which contains commands to run immediately at the
+      start, such as for the bot to authenticate with the server or
+      automatically join certain channels.
 
 Any arguments left unspecified will default to the value in the `setup()`
 function.  This should be trivial to change by editing the bot directly.
