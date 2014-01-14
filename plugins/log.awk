@@ -21,13 +21,14 @@ BEGIN {
 	room = $2
 }
 /^message/ {
-	msg = $2
+	$1=""
+	msg = $0
 }
 /^endtrigger/ {
 	# log to file
 	if (room in rooms) {
 		"date +%Y-%m-%d-%H%M" | getline time
 		close("date +%Y-%m-%d-%H%M")
-		print time" "user": "msg >> room
+		print time" "user":"msg >> room
 	}
 }
