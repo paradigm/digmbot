@@ -1,41 +1,7 @@
 #!/usr/bin/gawk -f
 #
-# returns url corresponding to requested vim "::help"
+# returns url corresponding to requested vim ":help"
 
-BEGIN {
-	tagfile = "/tmp/vimhelptags"
-	tagurl = "https://vim.googlecode.com/hg/runtime/doc/tags"
-	if (system("[ -r "tagfile" ]") != 0) {
-		system("wget \""tagurl"\" -O "tagfile ">/dev/null 2>&1")
-	}
-}
-function geturl(key) {
-	# look for an exact match
-	while ((getline < tagfile) > 0) {
-		if (index($0, key"\t") == 1) {
-			return "http://vimhelp.appspot.com/"$2".html#"key
-		}
-	}
-	close(tagfile)
-	# look for case insensitive match
-	while ((getline < tagfile) > 0) {
-		if (index(tolower($0), tolower(key)"\t") == 1) {
-			sub("^/\\*", "", $3)
-			sub("\\*$", "", $3)
-			return "http://vimhelp.appspot.com/"$2".html#"$3
-		}
-	}
-	close(tagfile)
-	# look for a substring match
-	while ((getline < tagfile) > 0) {
-		if (index($0, key) > 0 && index($0, key"\t") < index($0, "\t")) {
-			sub("^/\\*", "", $3)
-			sub("\\*$", "", $3)
-			return "http://vimhelp.appspot.com/"$2".html#"$3
-		}
-	}
-	return "No matches against "tagurl" as of whenever this bot downloaded it"
-}
 /^endload/ {
 	print "^(::|;)(h|he|hel|help) "
 }
@@ -44,8 +10,20 @@ function geturl(key) {
 	msg=$0
 }
 /^endtrigger/ {
+	# $1 is the ;help, $2 is the requested item
 	$0=msg
 	key = $2
-	url = geturl(key)
-	printf ":help %s -> %s", key, url
+	# escape the key for the shell
+	escapedkey = $2
+	gsub("\"","\\\"", escapedkey)
+	# remove any previous runs
+	system("rm /dev/shm/vimhelpout 2>/dev/null")
+	# get the relevant :help page and tag from vim
+	system("vim /dev/shm/vimhelpout -u NONE -c \"help "escapedkey"\" -c 'let @f = expand(\"%:t\") ' -c 'normal l\"tyt*' -c 'q' -c 'call feedkeys(\"ddihttp://vimhelp.appspot.com/\\<c-r>f.html#\\<c-r>t\\<esc>:wqa!\\<cr>\")' >/dev/null 2>/dev/null")
+	# set a default error message in case vim didn't return anything
+	$0 = "E149: Sorry, no help for "key
+	# read what vim kicked out
+	getline < "/dev/shm/vimhelpout"
+	# output to user
+	printf ":help %s -> %s", key, $0
 }
