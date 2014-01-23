@@ -3,18 +3,22 @@
 # returns url corresponding to requested vim ":help"
 
 /^endload/ {
-	print "^(::|;)(h|he|hel|help) "
+	# regex to match to trigger this plugin
+	print ";(h|he|hel|help) "
 }
 /^message/ {
+	# store the actual message content for when we hit endtrigger
 	$1=""
 	msg=$0
 }
 /^endtrigger/ {
-	# $1 is the ;help, $2 is the requested item
+	# get key from msg
 	$0=msg
-	key = $2
+	for (i=1; i<NF; i++)
+		if ($i ~ "^;(h|he|hel|help)$")
+			key = $(i+1)
 	# escape the key for the shell
-	escapedkey = $2
+	escapedkey = key
 	gsub("\\\\","\\\\", escapedkey)
 	gsub("\"","\\\"", escapedkey)
 	gsub("'","'\"'\"'", escapedkey)
