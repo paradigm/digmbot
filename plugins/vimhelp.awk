@@ -9,7 +9,7 @@
 /^message/ {
 	# store the actual message content for when we hit endtrigger
 	$1=""
-	msg=$0
+	msg=$0 
 }
 /^endtrigger/ {
 	# get key from msg
@@ -25,7 +25,14 @@
 	# remove any previous runs
 	system("rm /dev/shm/vimhelpout 2>/dev/null")
 	# get the relevant :help page and tag from vim
-	system("echo 'e /dev/shm/vimhelpout | execute \":help "escapedkey"\" | let @f = expand(\"%:t\") | execute \":normal l\\\"tyt*\" | q | execute \"normal i:help "escapedkey" -> http://vimhelp.appspot.com/\\<c-r>f.html#\\<c-r>t\\<esc>\" | wqa!' | vim -u NONE -e")
+	system("echo 'e /dev/shm/vimhelpout |" \
+		"execute \":help "escapedkey"\" |" \
+		"let @f = expand(\"%:t\") |" \
+		"execute \":normal l\\\"tyt*\" |" \
+		"q |" \
+		"execute \"normal i:help "escapedkey" -> http://vimhelp.appspot.com/\\<c-r>f.html#\\<c-r>t\\<esc>\" |" \
+		"wqa!' |" \
+		"vim -u NONE -e")
 	# If the trigger was at the beginning of the message, set the output as an
 	# error message in case vim doesn't find anything.  If the trigger was
 	# inline, don't say anything.
