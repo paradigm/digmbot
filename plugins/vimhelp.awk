@@ -16,7 +16,7 @@
 	$0=msg
 	for (i=1; i<NF; i++)
 		if ($i ~ "^;(h|he|hel|help)$")
-			key = $(i+1)
+		key = $(i+1)
 	# escape the key for the shell
 	escapedkey = key
 	gsub("\\\\","\\\\", escapedkey)
@@ -25,11 +25,16 @@
 	# remove any previous runs
 	system("rm /dev/shm/vimhelpout 2>/dev/null")
 	# get the relevant :help page and tag from vim
-	system("echo 'e /dev/shm/vimhelpout | execute \":help "escapedkey"\" | let @f = expand(\"%:t\") | execute \":normal l\\\"tyt*\" | q | execute \"normal ddihttp://vimhelp.appspot.com/\\<c-r>f.html#\\<c-r>t\\<esc>\" | wqa!' | vim -u NONE -e")
-	# set a default error message in case vim didn't return anything
-	$0 = "E149: Sorry, no help for "key
+	system("echo 'e /dev/shm/vimhelpout | execute \":help "escapedkey"\" | let @f = expand(\"%:t\") | execute \":normal l\\\"tyt*\" | q | execute \"normal i:help "escapedkey" -> http://vimhelp.appspot.com/\\<c-r>f.html#\\<c-r>t\\<esc>\" | wqa!' | vim -u NONE -e")
+	# If the trigger was at the beginning of the message, set the output as an
+	# error message in case vim doesn't find anything.  If the trigger was
+	# inline, don't say anything.
+	if ($1 ~ "^;(h|he|hel|help)$" && $2 == key)
+		$0 = ":help "key" -> E149: Sorry, no help for "key
+	else
+		$0 = ""
 	# read what vim kicked out
 	getline < "/dev/shm/vimhelpout"
 	# output to user
-	printf ":help %s -> %s", key, $0
+	printf "%s", $0
 }
