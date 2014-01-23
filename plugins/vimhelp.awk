@@ -17,6 +17,7 @@
 	escapedkey = $2
 	gsub("\\\\","\\\\", escapedkey)
 	gsub("\"","\\\"", escapedkey)
+	gsub("'","'\"'\"'", escapedkey)
 	# remove any previous runs
 	system("rm /dev/shm/vimhelpout 2>/dev/null")
 	# get the relevant :help page and tag from vim
