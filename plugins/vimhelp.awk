@@ -15,6 +15,7 @@
 	key = $2
 	# escape the key for the shell
 	escapedkey = $2
+	gsub("\\\\","\\\\", escapedkey)
 	gsub("\"","\\\"", escapedkey)
 	# remove any previous runs
 	system("rm /dev/shm/vimhelpout 2>/dev/null")
