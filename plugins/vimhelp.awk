@@ -8,23 +8,16 @@
 }
 /^message/ {
 	# store the actual message content for when we hit endtrigger
-	$1=""
-	msg=$0
+	$1 = ""
+	msg = $0
 }
 /^endtrigger/ {
-	# get key from msg
-	$0=msg
-	for (i=1; i<NF; i++) {
-		if ($i ~ "^;(h|he|hel|help)$") {
+	# get key from msg, defaulting to no key (i.e. just ":help")
+	$0 = msg
+	key = ""
+	for (i=1; i<NF; i++)
+		if ($i ~ "^;(h|he|hel|help)$" && i != NF)
 			key = $(i+1)
-			break
-		}
-	}
-	# check for ;help without argument
-	if (i == NF) {
-		print ":help -> http://vimhelp.appspot.com/help.txt.html"
-		exit
-	}
 	# escape the key for the shell
 	escapedkey = key
 	gsub("\\\\","\\\\", escapedkey)
