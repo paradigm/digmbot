@@ -4,19 +4,27 @@
 
 /^endload/ {
 	# regex to match to trigger this plugin
-	print ";(h|he|hel|help) "
+	print ";(h|he|hel|help)( |$)"
 }
 /^message/ {
 	# store the actual message content for when we hit endtrigger
 	$1=""
-	msg=$0 
+	msg=$0
 }
 /^endtrigger/ {
 	# get key from msg
 	$0=msg
-	for (i=1; i<NF; i++)
-		if ($i ~ "^;(h|he|hel|help)$")
-		key = $(i+1)
+	for (i=1; i<NF; i++) {
+		if ($i ~ "^;(h|he|hel|help)$") {
+			key = $(i+1)
+			break
+		}
+	}
+	# check for ;help without argument
+	if (i == NF) {
+		print ":help -> http://vimhelp.appspot.com/help.txt.html"
+		exit
+	}
 	# escape the key for the shell
 	escapedkey = key
 	gsub("\\\\","\\\\", escapedkey)
