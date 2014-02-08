@@ -77,6 +77,11 @@ function gettag(key) {
 	# get key from msg, defaulting to no key (i.e. just ":help")
 	$0 = msg
 	key = ""
+	# Turn an ACTION (/me) into a normal message
+	if ($0 ~ "\x01""ACTION .*""\x01") {
+		$0 = substr($0, index($0, $2))
+		$0 = substr($0, 1, length($0)-1)
+	}
 	for (i=1; i<NF; i++)
 		if ($i ~ "^;(h|he|hel|help)$" && i != NF)
 			key = $(i+1)
