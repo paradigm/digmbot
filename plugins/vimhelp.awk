@@ -24,7 +24,7 @@ function percentencode(str) {
 }
 
 function escapeshell(key) {
-	gsub("\\\\","\\\\", key)
+	gsub("\\\\","\\\\\\\\", key)
 	gsub("\"","\\\"", key)
 	gsub("'","'\"'\"'", key)
 	return key
@@ -34,6 +34,7 @@ function getpage(key) {
 	# remove any previous runs
 	system("rm "tmpfile" 2>/dev/null")
 	# get the relevant :help page and tag from vim
+	getline page < tmpfile
 	system("echo 'e "tmpfile" |" \
 		"execute \":help "key"\" |" \
 		"let @f = expand(\"%:t\") |" \
@@ -64,7 +65,7 @@ function gettag(key) {
 
 /^endload/ {
 	# regex to match to trigger this plugin
-	print ";(h|he|hel|help)( |$)"
+	print "(;|^:)(h|he|hel|help)( |$)"
 }
 
 /^message/ {
@@ -83,7 +84,7 @@ function gettag(key) {
 		$0 = substr($0, 1, length($0)-1)
 	}
 	for (i=1; i<NF; i++)
-		if ($i ~ "^;(h|he|hel|help)$" && i != NF)
+		if ($i ~ "^(;|:)(h|he|hel|help)$" && i != NF)
 			key = $(i+1)
 
 	# escape the key for the shell
@@ -97,7 +98,7 @@ function gettag(key) {
 		# If the trigger was at the beginning of the message, set the output as an
 		# error message in case vim doesn't find anything.  If the trigger was
 		# inline, don't say anything, as it could be people discussing ";help".
-		if ($1 ~ "^;(h|he|hel|help)$" && $2 == key)
+		if ($1 ~ "^(:|;)(h|he|hel|help)$" && $2 == key)
 			$0 = ":help "key" -> E149: Sorry, no help for "key
 		else
 			$0 = ""
