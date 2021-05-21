@@ -158,8 +158,10 @@ function parse() {
 			load_plugins()
 			return
 		}
-		if ($1 == "quit")
+		if ($1 == "quit") {
+			send("QUIT", net)
 			exit
+		}
 	}
 	for (plugin in plugins) {
 		if ($0 ~ plugins[plugin]) {
