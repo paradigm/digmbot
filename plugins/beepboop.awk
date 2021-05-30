@@ -6,7 +6,7 @@
 	nick = $2
 }
 /^endload/ {
-	print "beep|boop"
+	print "^(;beep$|;boop$|digmbot)"
 }
 /^user/ {
 	user = $2
@@ -58,7 +58,7 @@
 	punc[4] = "!"
 	punc[5] = "...!?"
 	punc[6] = "!!"
-	punc[7] = "...!?"
+	punc[7] = "...!!"
 	punc[8] = "!!"
 	punc[9] = "!!!"
 	out = out "" punc[int(rand()*(7+puncseed))]

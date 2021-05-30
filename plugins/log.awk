@@ -2,12 +2,11 @@
 #
 # logs channel contents to a file
 #
-# the resulting files will be in the pwd with the filename corresponding to the
-# channel.
+# the resulting files will be in the current working directory with the
+# filename corresponding to the channel.
 
 BEGIN {
 	# define rooms to be logged here
-	# for example, below will log pms to the bot:
 	rooms["digmbot"] = "digmbot"
 }
 /^endload/ {
@@ -25,10 +24,10 @@ BEGIN {
 	msg = $0
 }
 /^endtrigger/ {
-	# log to file
+	cmd = "date +%Y-%m-%d-%H%M"
 	if (room in rooms) {
-		"date +%Y-%m-%d-%H%M" | getline time
-		close("date +%Y-%m-%d-%H%M")
+		cmd | getline time
+		close(cmd)
 		print time" "user":"msg >> room
 	}
 }

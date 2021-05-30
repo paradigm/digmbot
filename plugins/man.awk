@@ -1,6 +1,6 @@
-#!/usr/bin/gawk -f
+#!/usr/bin/awk -f
 #
-# returns url to vim documentation
+# returns url to man page documentation
 BEGIN {
 	pagecache = "/tmp/manpagecache"
 	if (system("[ -d "pagecache" ]") != 0) {
@@ -20,7 +20,7 @@ BEGIN {
 
 	# provided specific item
 	if (length($2) == 1) {
-		printf "man%s -> http://linux.die.net/man/%d/%s\n", $0, $2, $3
+		printf "man%s -> https://linux.die.net/man/%d/%s\n", $0, $2, $3
 		exit
 	}
 

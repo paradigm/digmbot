@@ -6,23 +6,19 @@
 # modify it under the terms of the GNU General Public License
 # version 2 as published by the Free Software Foundation.
 #
-# Copyright (c) 2013 Daniel Thau <paradigm@bedrocklinux.org>
+# Copyright (c) 2013-2021 Daniel Thau <paradigm@bedrocklinux.org>
 
 BEGIN {
-	setup()
-	loadplugins()
-	net = "/inet/tcp/0/" server "/" port
+	#########################################################################
+	# If you are editing this file to set a password for SASL               #
+	# authentication, uncomment the following line and edit it accordingly. #
+	#########################################################################
+	# sasl="<password>"
 
-	print "Connecting to " server "/" port "..."
-	send("NICK " nick, net)
-	send("USER " nick " x x :" nick, net)
-
-	RS="\n"
-	while ((getline < initfile) > 0) {
-		$0=":"owner"!~"owner"@"owner" PRIVMSG "nick" :"$0
-		parse()
-	}
-	close(initfile)
+	setup_vars()
+	connect()
+	load_plugins()
+	load_init_cmds()
 
 	RS="\r\n"
 	while (net |& getline) {
@@ -30,20 +26,142 @@ BEGIN {
 	}
 }
 
-function setup() {
+function setup_vars() {
 	if (nick == "")      nick      = "digmbot"
 	if (owner == "")     owner     = "paradigm"
-	if (server == "")    server    = "chat.freenode.net"
-	if (port == "")      port      = 6667
+	if (server == "")    server    = "irc.libera.chat"
+	if (port == "")      port      = 6697
 	if (plugindir == "") plugindir = "./plugins"
 	if (initfile == "")  initfile = "./init"
+	# ssl requires `openssl`
+	if (disable_ssl)
+		net = "/inet/tcp/0/" server "/" port
+	else
+		net = "openssl s_client --connect " server ":" port
+	if (sasl) {
+		# encode
+		base64 = "base64"
+		printf "%s\0%s\0%s\0", nick, nick, sasl |& base64
+		close(base64, "to")
+		base64 |& getline sasl
+		close(base64)
+	}
 }
 
-function loadplugins() {
+function connect() {
+	print "Connecting to " server ":" port "..."
+	if (sasl) {
+		send("CAP REQ :sasl", net)
+	}
+	send("NICK " nick, net)
+	send("USER " nick " x x :" nick, net)
+	if (sasl) {
+		send("AUTHENTICATE PLAIN", net)
+	}
+}
+
+function load_init_cmds() {
+	RS="\n"
+	while ((getline < initfile) > 0) {
+		init_cmds[init_cmd_count++] = ":"owner"!~"owner"@"owner" PRIVMSG "nick" :"$0
+		i++
+	}
+	close(initfile)
+
+	RS="\r\n"
+}
+
+function send(outstring, file) {
+	if (file == net)
+		printf "%s\r\n", outstring |& file
+	else
+		printf "%s\n", outstring |& file
+}
+
+function parse() {
+	if ($1 == "PING") {
+		send("PONG " $2, net)
+		return
+	} else if ($0 == "AUTHENTICATE +") {
+		send("AUTHENTICATE " sasl, net)
+		net |& getline sasl_response
+		print sasl_response
+		if (sasl_response !~ /:You are now logged in as/) {
+			print "digmbot: SASL authentication error, exiting"
+			exit
+		}
+		send("CAP END", net)
+		return
+	} else if ($2 == "001") {
+		print "digmbot: successfully connected to server"
+		for (i = 0; i < init_cmd_count; i++) {
+			$0 = init_cmds[i]
+			parse()
+		}
+	} else if ($2 == "NOTICE") {
+		print
+		return
+	} else if ($2 != "PRIVMSG") {
+		# ignore unrecognized messages
+		return
+	}
+
+	print
+
+	user = substr($0, 2, index(substr($0, 2), "!")-1)
+	room = $3
+	# Respond directly to the user if they're PMing the bot
+	if (room == nick)
+		room = user
+	# Skip over $1 since it may have a ':' in it (e.g., IPv6)
+	$0 = substr($0, index($0, $2))
+	$0 = substr($0, index($0, ":") + 1)
+
+	if (user == owner && room == user) {
+		if ($1 == "say") {
+			send("PRIVMSG " $2 " :" cut_field(2), net)
+			return
+		} else if ($1 == "action") {
+			send("PRIVMSG " $2 " :""\x01""ACTION " cut_field(2), net)
+			return
+		} else if ($1 == "join") {
+			send("JOIN " $2, net)
+			return
+		} else if ($1 == "part") {
+			send("PART " $2, net)
+			return
+		} else if ($1 == "reload") {
+			load_plugins()
+			return
+		}
+		if ($1 == "quit")
+			exit
+	}
+	for (plugin in plugins) {
+		if ($0 ~ plugins[plugin]) {
+			file = plugindir "/" plugin
+			print "Triggered plugin: " file
+			send("user " user,  file)
+			send("room " room,  file)
+			send("message " $0, file)
+			send("endtrigger",  file)
+			close(file, "to")
+			file |& getline output
+			close(file)
+			if (output != "") {
+				send("PRIVMSG " room " :" output, net)
+				output = ""
+			}
+		}
+	}
+}
+
+function load_plugins() {
 	print "Loading plugins..."
 	# reliable (consider newline in filename) and posix way to get plugins
 	RS="/"
 	cmd = "cd \""plugindir"\"; for f in *; do printf \"%s/\" \"$f\"; done"
+	split("", plugin_names, "")
 	while((cmd | getline plugin_name) > 0)
 		plugin_names[plugin_name];
 	close(cmd)
@@ -59,95 +177,22 @@ function loadplugins() {
 		send("plugindir " plugindir, file)
 		send("plugin "    plugin,    file)
 		send("endload",              file)
-		close(file,"to")
+		close(file, "to")
 		file |& getline plugins[plugin]
 		close(file)
 		print "Plugin \""plugin"\" is looking for regex /" plugins[plugin] "/"
 	}
-	close("ls "plugindir)
 	RS="\r\n"
-}
-
-function parse() {
-	if ($1 == "PING") {
-		send("PONG " $2, net)
-		return
-	}
-	else
-		print
-	# NOTICEs should explicitly be ignored, but it's easier to just ignore
-	# all non-PRIVMSG
-	if ($2 != "PRIVMSG")
-		return
-
-	user = substr($0,2,index(substr($0,2),"!")-1)
-	room = $3
-	# Respond directly to the user if they're PMing the bot
-	if (room == nick)
-		room = user
-	# Skip over $1 since it may have a ':' in it (e.g., IPv6)
-	$0 = substr($0,index($0, $2))
-	$0 = substr($0,index($0,":")+1)
-
-	if (user == owner && room == user) {
-		if ($1 == "say") {
-			send("PRIVMSG " $2 " :" cutfield(2), net)
-			return
-		}
-		if ($1 == "action") {
-			send("PRIVMSG " $2 " :""\x01""ACTION " cutfield(2), net)
-			return
-		}
-		if ($1 == "join") {
-			send("JOIN " $2, net)
-			return
-		}
-		if ($1 == "part") {
-			send("PART " $2, net)
-			return
-		}
-		if ($1 == "reload") {
-			delete plugins
-			loadplugins()
-			return
-		}
-		if ($1 == "quit")
-			exit
-	}
-	for (plugin in plugins) {
-		if ($0 ~ plugins[plugin]) {
-			file = plugindir "/" plugin
-			print "Triggered plugin: " file
-			send("user " user,  file)
-			send("room " room,  file)
-			send("message " $0, file)
-			send("endtrigger",  file)
-			close(file,"to")
-			file |& getline output
-			close(file)
-			if (output != "") {
-				send("PRIVMSG " room " :" output, net)
-				output = ""
-			}
-		}
-	}
 }
 
 # skips first n many fields, then returns the rest
 # hacky due to backwards-compatibility and hashbang silliness
-function cutfield(n) {
+function cut_field(n) {
 	msg = $0
 	regex = "^[[:blank:]]*"
 	skipfield = "([^[:blank:]]+[[:blank:]]+)"
-	for(i=0;i<n;i++)
+	for(i=0; i < n; i++)
 		regex = regex "" skipfield
-	sub(regex,"",msg)
+	sub(regex, "", msg)
 	return msg
-}
-
-function send(outstring, file) {
-	if (file == net)
-		printf "%s\r\n", outstring |& file
-	else
-		printf "%s\n", outstring |& file
 }
