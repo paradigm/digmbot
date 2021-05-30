@@ -10,6 +10,7 @@ digmbot is primarily written in awk, but it may extend on the following:
 
 - To list plugins, digmbot runs `system()` with shell globing.  In theory
   someone could have `awk` but not `/bin/sh`.
+- Rate limiting requires `date` and `sleep`.
 - SSL/TLS support requires `openssl` with `s_client`.
 - SASL requires `base64`.
 

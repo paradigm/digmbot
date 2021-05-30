@@ -72,10 +72,37 @@ function load_init_cmds() {
 }
 
 function send(outstring, file) {
-	if (file == net)
+	if (file == net) {
+		# Quick and dirty rate limiting: do not send two messages
+		# within the same second
+		cmd = "date +%s"
+		cmd | getline now
+		close(cmd)
+		if (last_message_timestamp == now) {
+			print "RATE LIMITING"
+			system("sleep 1")
+		}
+		last_message_timestamp = now
+
+		# Quick and dirty self-spam prevention: do not send the same
+		# message too many times in a row
+		duplicate_output_max = 3
+		duplicate_output_count = 0
+		for (i in send_history) {
+			if (send_history[i] == outstring) {
+				duplicate_output_count++
+			}
+		}
+		if (duplicate_output_count >= duplicate_output_max) {
+			return
+		}
+
+		send_counter = (send_counter + 1) % duplicate_output_max
+		send_history[send_counter] = outstring
 		printf "%s\r\n", outstring |& file
-	else
+	} else {
 		printf "%s\n", outstring |& file
+	}
 }
 
 function parse() {
