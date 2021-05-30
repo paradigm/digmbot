@@ -125,11 +125,8 @@ function parse() {
 			$0 = init_cmds[i]
 			parse()
 		}
-	} else if ($2 == "NOTICE") {
-		print
-		return
 	} else if ($2 != "PRIVMSG") {
-		# ignore unrecognized messages
+		print
 		return
 	}
 
